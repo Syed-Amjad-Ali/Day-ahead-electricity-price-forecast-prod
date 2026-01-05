@@ -39,12 +39,23 @@ Rather than maximizing complexity, the emphasis is on understanding model behavi
 
 For a more academic perspective on electricity price forecasting, the following papers provide useful context and motivation:
 
-- Weron, R. (2014). *Electricity price forecasting: A review of the state-of-the-art with a look into the future.*
-- Ziel, F., Steinert, R., & Husmann, S. (2015). *Efficient modeling and forecasting of electricity spot prices.*
-- Lago, J., De Ridder, F., & De Schutter, B. (2018). *Forecasting day-ahead electricity prices: A review of state-of-the-art algorithms, best practices, and an open-access benchmark.*
-- Uniejewski, B., Marcjasz, G., & Weron, R. (2016). *Understanding intraday electricity price forecasts.*
+1. Jaehnert, S., Farahmand, H., & Doorman, G. L. (2009).  
+   *Modelling of Prices Using the Volume in the Norwegian Regulating Power Market.*  
+   NTNU, IEEE-style conference paper.
 
-These works highlight the importance of autoregressive effects, calendar structure, and external drivers such as weather, while also emphasizing the trade-offs between accuracy, stability, and interpretability.
+2. Jensen, M. W., Ren, H., & Shalaginov, A. (2024).  
+   *Day-ahead Electricity Price Forecasting of Elspot Markets in Norway.*  
+   ENERGY 2024 (IARIA), Kristiania University College.
+
+3. Mabilangan, G. (2025).  
+   *Statistical Analysis of Electricity Prices in Southern Norway.*  
+   Noroff School of Technology and Digital Media, March 2025.
+
+4. Scott, O. H., & Mellander, W. (2025).  
+   *Scenario-Based Long-Term Electricity Price Forecasting in NO4 (Norway) Using a Hybrid Machine Learning Model.*  
+   Bachelor Thesis, KTH Royal Institute of Technology.
+
+These works highlight the importance of autoregressive effects, calendar structure, and external drivers such as weather, hydropower availability, global fuel prices, and exchange rates while also emphasizing the trade-offs between accuracy, stability, and interpretability.
 
 ---
 ## Notes

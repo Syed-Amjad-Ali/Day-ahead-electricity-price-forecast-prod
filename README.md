@@ -1,9 +1,14 @@
 # Day-Ahead Electricity Price Forecasting (Bergen)
 
-This repository contains an exploratory data analysis and modeling workflow for forecasting **day-ahead electricity prices** for Bergen, Norway (bidding zone NO5).
+This repository contains the main exploratory data analysis and modeling workflow for forecasting **day-ahead electricity prices** for Bergen, Norway (bidding zone NO5).
 
-The work is intentionally practical rather than purely academic. The long-term goal is to build a **live forecasting dashboard** where users can see next-day price projections alongside realized prices, including an honest view of model accuracy over time.  
-At this stage, the notebook represents a **static modeling and evaluation report**. A live pipeline using Azure Databricks and a lightweight Power BI dashboard is planned as the next step.
+The project currently centers around a single, end-to-end notebook that documents the full thought process: from initial data exploration and time series decomposition to feature design, model testing, and evaluation. This notebook serves as the analytical foundation of the project.
+
+As the project evolves, this workflow will gradually be broken down into smaller, purpose-specific notebooks aligned with a **bronze–silver–gold** structure. These will be used as part of scheduled Azure Databricks jobs and pipelines, separating data ingestion, transformation, forecasting, and evaluation more clearly.
+
+The work is intentionally practical rather than purely academic. The long-term goal is to build a **live forecasting dashboard** where users can see next-day price projections alongside realized prices, including an honest view of model accuracy over time.
+
+At this stage, the repository represents a **static modeling and evaluation report** backed by real data. A live pipeline using Azure Databricks and a lightweight Power BI dashboard is planned as the next step.
 
 ---
 

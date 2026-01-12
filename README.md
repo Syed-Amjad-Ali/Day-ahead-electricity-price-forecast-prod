@@ -1,14 +1,11 @@
 # Day-Ahead Electricity Price Forecasting (Bergen)
 
-This repository contains the main exploratory data analysis and modeling workflow for forecasting **day-ahead electricity prices** for Bergen, Norway (bidding zone NO5).
+I built this project to test myself on **data engineering fundamentals combined with a small, realistic forecasting problem**.
 
-The project currently centers around a single, end-to-end notebook that documents the full thought process: from initial data exploration and time series decomposition to feature design, model testing, and evaluation. This notebook serves as the analytical foundation of the project.
+The goal was not to build a highly complex machine learning model, but to understand how a **real-world pipeline** would look end to end:
+API ingestion → cleaning and structuring data → running a forecasting model → preparing outputs for a simple dashboard.
 
-As the project evolves, this workflow will gradually be broken down into smaller, purpose-specific notebooks aligned with a **bronze–silver–gold** structure. These will be used as part of scheduled Azure Databricks jobs and pipelines, separating data ingestion, transformation, forecasting, and evaluation more clearly.
-
-The work is intentionally practical rather than purely academic. The long-term goal is to build a **live forecasting dashboard** where users can see next-day price projections alongside realized prices, including an honest view of model accuracy over time.
-
-At this stage, the repository represents a **static modeling and evaluation report** backed by real data. A live pipeline using Azure Databricks and a lightweight Power BI dashboard is planned as the next step.
+Electricity prices turned out to be a good fit for this purpose. The data is real, time-dependent, publicly available, and naturally suited for incremental ingestion. Combined with weather data, it allowed me to explore both engineering and modeling decisions without artificial assumptions.
 
 ---
 
@@ -23,20 +20,6 @@ The data ultimately originates from the ENTSO-E Transparency Platform:
 The openness and reliability of these sources make them well suited for experimentation, validation, and future deployment in a production-like setting.
 
 Weather data (air temperature) is included as an additional explanatory variable to capture demand-side effects.
-
----
-
-## Project objective
-
-The objective is to forecast **the next 24 hours of electricity prices** using only information that would realistically be available at the time of prediction.
-
-The focus is deliberately narrow:
-- Short-term (day-ahead) forecasting  
-- Hourly resolution  
-- Transparent and explainable models  
-- Continuous comparison between predicted and actual prices  
-
-Rather than maximizing complexity, the emphasis is on understanding model behavior, limitations, and real-world usability.
 
 ---
 
@@ -66,56 +49,162 @@ These works highlight the importance of autoregressive effects, calendar structu
 ## Notes
 This project is intentionally iterative. The current model is not presented as a final or optimal solution, but as a well-reasoned and reproducible baseline that can be extended as more data sources and operational constraints are introduced.
 
+
+
+---
+
+## Project evolution
+
+I started this project in a **purely analytical way**.
+
+Initially, I worked with a **static dataset** covering electricity prices and weather data from January 2023 to January 2026. Using Jupyter Notebook, I focused on:
+- Exploratory data analysis  
+- Understanding seasonality and intraday patterns  
+- Testing different feature choices  
+- Comparing simple statistical models  
+
+After experimenting with several specifications, I intentionally settled on a **simple but stable OLS-based model**. The objective at this stage was not to optimize performance aggressively, but to establish a **baseline that behaves sensibly** and is easy to reason about.
+
+Once the modeling side felt solid enough, I moved on to the main learning goal of the project: **turning an analysis notebook into a production-style pipeline**.
+
+---
+
+## Pipeline overview
+
+I migrated the project to **Azure Databricks** and broke the large notebook into smaller, purpose-specific notebooks aligned with a **bronze–silver–gold (medallion) architecture**.
+
+What started as a linear notebook gradually became a **non-linear DAG of dependent tasks**, closer to what I would expect in a real data platform.
+
+### Bronze
+- One-time historical backfill from CSV  
+- Incremental ingestion from electricity price and weather APIs  
+- Append-only storage using Delta tables  
+- Ingestion timestamps preserved for auditability  
+
+### Silver
+- Incrementally maintained, cleaned datasets  
+- Deduplication and late-arriving data handling  
+- Clear separation between price data and weather data  
+- Joins performed only when required for modeling  
+
+### Gold
+- Model-ready training datasets  
+- Stored and versioned model parameters  
+- Day-ahead forecasts written as reproducible outputs  
+
+At first, I focused mainly on **getting the jobs to run correctly**. Once the pipeline was stable, I went back to improve:
+- Table partitioning  
+- Incremental logic  
+- Proper use of Delta Lake `MERGE` patterns  
+- Avoiding unnecessary full rewrites  
+
+This iterative approach mirrors how I would expect a real system to evolve over time.
+
+---
+
+## Architecture and design principles
+
+Some of the principles I consciously tried to apply while building the pipeline:
+
+- Incremental processing instead of recomputing full history  
+- Idempotent transformations using Delta Lake  
+- One notebook per logical responsibility  
+- Clear separation between ingestion, transformation, and modeling  
+- Ability to inspect table history and understand how data evolved  
+
+The pipeline is intentionally kept readable rather than overly abstract.
+
+---
+
+## Data sources
+
+**Electricity prices**  
+Hourly spot prices retrieved from:  
+https://www.hvakosterstrommen.no  
+
+Underlying source:  
+ENTSO-E Transparency Platform  
+https://transparency.entsoe.eu  
+
+**Weather data**  
+Hourly air temperature data retrieved from the Norwegian Meteorological Institute (Frost API).
+
+Both data sources are free, reliable, and well suited for incremental ingestion, which made them ideal for this project.
+
+---
+
+## Modeling objective
+
+The modeling task is deliberately constrained:
+
+- Forecast the **next 24 hours** of electricity prices  
+- Hourly resolution  
+- Use only information that would realistically be available at prediction time  
+- Keep the model transparent and explainable  
+
+This constraint influenced both feature design and pipeline structure.
+
+---
+
 ## Modeling approach
 
-The modeling process followed a gradual and exploratory path:
+The current model is intentionally simple:
 
-1. Initial exploratory analysis and time series decomposition to understand trend and seasonality.
-2. Baseline linear models using calendar features such as hour of day and weekday.
-3. Introduction of lagged prices, with a focus on a 24-hour lag to preserve a realistic day-ahead forecasting setup.
-4. Inclusion of air temperature as a weather-related explanatory variable.
-5. Experiments with XGBoost to test whether nonlinear relationships improve performance.
-6. Final selection of an OLS model based on performance, stability, and interpretability.
+- Ordinary Least Squares (OLS)  
+- Hour-of-day and weekday effects  
+- Autoregressive structure using lagged prices  
+- Weather effects via air temperature  
 
-While more complex models can capture nonlinearities, the final OLS specification provides a strong balance between predictive power and transparency, which is important for deployment in a public-facing dashboard.
+Model parameters are:
+- Trained on gold-layer datasets  
+- Versioned monthly  
+- Stored explicitly in Delta tables  
+
+The model is not treated as the “final answer”. Instead, it acts as a **baseline that the pipeline is built around**.
+
+---
+
+## Operational workflow
+
+A typical execution flow looks like this:
+
+1. Bronze ingestion jobs append new hourly price and weather data  
+2. Silver tables incrementally update trusted datasets  
+3. Silver joins produce feature tables for modeling  
+4. Gold training datasets are refreshed  
+5. Model parameters are retrained on a monthly cadence  
+6. Day-ahead forecasts are generated and stored  
+
+This structure is reflected in the non-linear Databricks Job graph.
 
 ---
 
 ## Results and evaluation
 
-The final model captures the intraday structure of prices well and produces realistic day-ahead forecasts.  
-Errors are most pronounced during sudden evening price spikes, which is expected given the limited information set and the linear nature of the model.
+The model captures intraday price patterns reasonably well under normal conditions.  
+Errors are largest during sudden price spikes, which is expected given the limited information set and the linear model structure.
 
-Rather than hiding these limitations, the project explicitly compares predicted and actual prices hour by hour. This makes model behavior and uncertainty visible, which is a core design principle for the planned dashboard.
+Predicted and realized prices are stored separately, making it possible to evaluate performance transparently and prepare the data for future dashboarding.
 
----
 
-## Next steps
 
-This notebook is the analytical foundation for a live system. Planned extensions include:
-
-- A daily automated data pipeline using Azure Databricks
-- Monthly model retraining with expanding historical data
-- A Power BI dashboard showing:
-  - Day-ahead price forecasts
-  - Actual realized prices
-  - Model error over time
-  - Cheapest and most expensive forecasted hours
-
-The emphasis will remain on realism, transparency, and usability rather than overfitting or excessive model complexity.
 
 ---
 
-## Repository contents
+## Project status and next steps
 
-- `EDA and Time Series Decomp.ipynb`  
-  Exploratory analysis, feature engineering, model development, and evaluation.
 
-- `Results.txt`  
-  Summary outputs and evaluation results.
+Planned improvements include:
+- Improving the autoregressive structure (e.g. testing `t-168` instead of weekday dummies)  
+- Using 24h Weather forecast data instead of imputation 
+- The above two changes would simultaneously require adjustments in the data pipeline inside Databricks
+
+
+
+
 
 ---
 
-## Notes ( again :) )
+## Notes  again :smiley: 
 
 This project is intentionally iterative. The current model is not presented as a final or optimal solution, but as a well-reasoned and reproducible baseline that can be extended as more data sources and operational constraints are introduced.

@@ -7,6 +7,8 @@ API ingestion → cleaning and structuring data → running a forecasting model 
 
 Electricity prices turned out to be a good fit for this purpose. The data is real, time-dependent, publicly available, and naturally suited for incremental ingestion. Combined with weather data, it allowed me to explore both engineering and modeling decisions without artificial assumptions.
 
+
+
 ---
 
 ## Data source
@@ -49,7 +51,8 @@ These works highlight the importance of autoregressive effects, calendar structu
 ## Notes
 This project is intentionally iterative. The current model is not presented as a final or optimal solution, but as a well-reasoned and reproducible baseline that can be extended as more data sources and operational constraints are introduced.
 
-
+🔗 **Live dashboard:**  
+https://www.syedamjadali.no/portfolio.html
 
 ---
 
@@ -195,9 +198,15 @@ Predicted and realized prices are stored separately, making it possible to evalu
 
 
 Planned improvements include:
-- Improving the autoregressive structure (e.g. testing `t-168` instead of weekday dummies)  
-- Using 24h Weather forecast data instead of imputation 
-- The above two changes would simultaneously require adjustments in the data pipeline inside Databricks
+- Reworking the autoregressive structure (for example, testing `t-168` weekly lags instead of weekday dummy variables)
+- Replacing weather imputation with **true 24-hour weather forecast data**
+- Updating the Databricks pipeline to support forward-looking feature generation
+- Separating *forecast generation* from *historical backtesting* so both can coexist cleanly
+
+Once these changes are implemented, the system will be able to:
+- Generate a genuine day-ahead (24h) forecast using only information available at prediction time
+- Store forecasts independently from realized prices
+- Continuously evaluate forecast accuracy as actual prices become available
 
 
 
